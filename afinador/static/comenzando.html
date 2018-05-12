@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Estudio sobre la web Audio API. EL contexto de audio .audioContext y ejemplos">
+       <meta name="author" content="Luis Javier Gil Bobillo">
+    <link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon">
+<link rel="icon" href="images/favicon.ico" type="image/x-icon">
+	<link rel="apple-touch-icon" href="images/icono57.png">
+	<link rel="apple-touch-icon" sizes="72x72" href="images/icono72.png">
+	<link rel="apple-touch-icon" sizes="114x114" href="images/icono114.png">
+
+    <title>Estudio de la Web Audio API. Comenzando.</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+	<link href="google-code-prettify/prettify.css" rel="stylesheet" type="text/css">
+
+    <!-- Custom styles for this template -->
+    <link href="bootstrap/css/offcanvas.css" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" type="text/css" href="bootstrap/css/docs.css">
+	<link rel="stylesheet" type="text/css" href="bootstrap/css/pygments-manni.css">
+    <!-- Just for debugging purposes. Don't actually copy this line! -->
+    <!--[if lt IE 9]><script src="../../docs-assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
+
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+      <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+    <![endif]-->
+     <script type="text/javascript"  src="google-code-prettify/prettify.js"></script>
+   <style>
+ #provisional{ position:absolute;}
+  p {text-align:justify;}
+ </style>
+ <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-28916569-4', 'estegrafico.com');
+  ga('send', 'pageview');
+
+</script>
+  </head>
+
+  <body onLoad="prettyPrint()">
+    <div class="navbar navbar-fixed-top navbar-inverse" role="navigation">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="sr-only">Cambia la navegación</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+           <a href="" class="navbar-brand">El audio en la web</a>
+        </div>
+        <div class="collapse navbar-collapse">
+          <ul class="nav navbar-nav">
+            <li><a href="index.html">Inicio</a></li>
+             <li><a href="#" class="dropdown-toggle" data-toggle="dropdown">Afinador experimental<b class="caret"></b></a><ul class="dropdown-menu" role="menu" >
+             <li><a href="afinadorb.html">Afinador</a></li>
+            <li><a href="detector-de-armonicos.html">Detección armónica</a></li></ul></li>
+            <li class="active"><a href="comenzando.html">Ejemplos</a></li>
+          </ul>
+        </div><!-- /.nav-collapse -->
+      </div><!-- /.container -->
+    </div><!-- /.navbar -->
+
+    <div class="container">
+    <div class="header">
+        <h3 class="text-muted">Comenzando con la web audio API</h3>
+      </div>
+
+      <div class="row row-offcanvas row-offcanvas-right">
+
+        <div class="col-xs-12 col-sm-9">
+          <p class="pull-right visible-xs">
+            <button type="button" class="btn btn-primary btn-xs" data-toggle="offcanvas">Cambiar navegación</button>
+          </p>
+          
+          <div class="row">
+            <div class="col-12 col-sm-12 col-lg-12">
+              <h2>El contexto de audio</h2>
+               <p> La Web Audio API es una Interfaz de programación avanzada de JavaScript de alto nivel para el procesamiento y síntesis de audio en aplicaciones web. El objetivo de esta API es incluir las funcionalidades y capacidades que encontramos en los motores de las modernas aplicaciones web de escritorio en un entorno web, para realizar tareas de mezcla, procesamiento y filtrado de señal en nuestro navegador. </p>
+              <p>La Web Audio API está disponible actualmente para los navegadores <label class=" label label-warning"> Chrome</label> y <label class=" label label-warning">Safari</label>, y es accesible para los desarrolladores a través de Javascript. En estos navegadores, el contexto de audio se crea con el prefijo <code>webkit</code>. Mozilla ha publicado que están implementando la Web audio API en Firefox, y pronto estará disponible para la mayoría de navegadores.</p>
+              <p>En todo caso, podemos inicializar nuestro contexto de audio atendiendo al navegador con que se ejecute la aplicación con el siguiente código:</p>
+              <div class="highlight">
+               <pre class="prettyprint"><code class="language-js">
+    var contextoDeAudio = (window.AudioContext || 
+    window.webkitAudioContext || 
+    window.mozAudioContext ||
+    window.oAudioContext || 
+    window.msAudioContext);
+    if (contextoDeAudio) {
+       // La Web Audio API está diponible. 
+    } else {
+       // La web audio api no está disponible
+       }
+            </code></pre>
+           </div>   
+            
+       <p>Cada contexto de audio puede soportar múltiples entradas y salidas, así como un enrutamiento complejo de la señal, por lo que generalmente necesitaremos sólo un contexto de audio para cada aplicación.</p>
+       <p>La instancia del contexto de audio incluye métodos para crear nodos de audio, o puntos de procesado de señal, que podremos interconectar para trabajar la señal de audio.</p>   
+       <p style="text-align:center">
+       <img src="imagenes/fuente-destino.jpg" class="img-thumbnail img-responsive" alt="Fuente- destino" />
+       </p>
+       <p>Pulsa este botón para <button onClick="comprobar();" class="btn btn-default">comprobar</button> si tu navegador soporta la Web Audio API</p>  
+           <p> Para producir un sonido con la  Web audio API, crearemos una o más fuentes de audio y las conectaremos al destino o salida proporcionada por la instancia AudioContext. Esta conexión no tiene que ser directa, y puede ir a través de cualquier número de <code>AudioNodes</code> o etapas de procesado intermedias que actuarán como módulos de procesamiento para la señal de audio. Este enrutamiento se describe en mayor detalle en la <a href="http://www.w3.org/TR/webaudio/" target="_blank">especificación de la Web Audio API.</a> 
+            
+           <h2>Los nodos de audio</h2>
+          <p> Los nodos de audio son los ladrillos del edificio AudioContext. Esta interfaz representa las fuentes de audio, el destino y los módulos de procesado intermedios. Estos bloques pueden conectarse unos con otros atendiendo a un gráfico de procesado para renderizar o preparar el audio hacia nuestro hardware de salida. Cada nodo posee sus entradas y salidas, excepto por un nodo fuente o SourceNode, que solo presenta una salida, y el AudioDestinationNode, que representa el final de la cadena de audio y solo tiene una entrada. Cada tipo de AudioNode se caracteriza por el tipo de procesado que realiza sobre la señal de audio.</p>
+<p>Cada salida tienen un número de canales determinados que podremos especificar y podremos conectarla a la entrada de uno o varios nodos. Para esto utilizaremos el método connect(). </p>
+<p>Las entradas de los nodos  tienen, a su vez, un número de canales determinado. Este número dependerá de las conexiones hechas a la entrada.</p>
+
+<h4>Atributos</h4>
+<ul>
+<li><strong>Contexto</strong>: el atributo context muestra el contexto de Audio al que pertenece el nodo.</li>
+<li><strong>Número de entradas</strong>: atributo de lectura que muestra el número de entradas del nodo.</li>
+<li><strong>Número de salidas</strong>: atributo de lectura que muestra el número de salidas del nodo.</li>
+<li><strong>Número de canales</strong>: Podemos especificar el número de canales que mezclaremos en la entrada.  Y con los atributos <code>channelCountMode</code> y <code>ChannelInterpretation</code> podremos seleccionarlos para tratarlos por separado.</li>
+</ul>
+<h4>Métodos y parámetros</h4>
+<ul>
+<li><strong>connect</strong> : este método nos permite conectar un nodo a otro a través de varios parámetros:</li>
+<li>	<strong>destination</strong>: selecciona el nodo de destino al que conectarlo.</li>
+<li>	<strong>output</strong>: parámetro índice que define qué salida del nodo utilizaremos para conectarlo.</li>
+<li>	<strong>input</strong>: parámetro que describe qué entrada del nodo de destino utilizaremos para hacer la conexión.</li>
+<li><strong>Discconect</strong>: con este método podremos desconectar la salida del nodo.</li>
+</ul>
+<p>Estos métodos funcionan tanto para conectar nuestro nodo a otros nodos como para conectarlos a un <code>AudioParam</code>, que representan una funcionalidad de un nodo.</p>
+        
+<p>Uno de los usos más extendidos en el contexto de audio es crear nodos de audio, o etapas de procesado.</p>
+<p>Podemos diferenciar varios tipos:</p>
+<div class="well">
+      <dl class="nav nav-pills ">
+      <dt>Nodos de fuente</dt>
+      <dd>Fuentes de audio como audio buffers, entradas de micrófono, etiquetas de audio, osciladores, y procesadores de Javascript</dd>
+      <dt>Nodos de modificación</dt>
+      <dd>Filtros, panners, compresores, etc.</dd>
+      <dt>Nodos de análisis</dt>
+      <dd>Analizadores y procesadores de Javascript</dd>
+      <dt>Nodos de destino</dt>
+      <dd>Salida de audio y buffers de procesado offline</dd>
+      </dl>      
+</div> 	  
+	<h2>La cadena de Audio</h2>
+<p>El ruteo modular permite crear conexiones arbitrarias entre los diferentes Nodos de Audio o AudioNodes. Cada nodo puede tener entradas y salidas. Un nodo fuente o Source node, carece de entradas y solamente posee una salida, por el contrario un Nodo de Destino presenta una única entrada. El mejor ejemplo de Nodo de Destino es el AudioDestinationNode, que representa el destino final del hardware de audio del dispositivo. Otros Nodos, como los filtros, pueden ser colocados entre los nodos de fuente y destino. El desarrollador no ha de preocuparse por los pequeños detalles de construcción de la cadena de audio para que esta funcione (aunque también puede hacerlo, y ahondar en las posibilidades de enrutamiento de señal). Por ejemplo si una fuente de audio mono es conectada a una entrada estéreo, los canales se mezclaran automáticamente y se separarán en canal derecho e izquierdo.</p>
+
+<p>El Ruteo modular es la principal y más básica característica de la Web Audio API, y está enmarcada en el Contexto de Audio de la aplicación o <code>AudioContext</code>.</p>
+    
+ <p>   Cada nodo de audio puede ser conectado a otro con la función <code>connect()</code>. Estableceremos una fuente y un destino. La fuente suele ser una dadena de datos de audio proveniente de un buffer de entrada y la salida o <code>.destination</code>  es un nodo especial asociado con la salida de audio de tu sistema operativo, a la cual tiene acceso el navegador.</p>
+     <p style="text-align:center">
+      <img src="imagenes/fuente-compresor.jpg" alt="compresor web audio API" class="img-thumbnail img-responsive"/>
+      </p>
+        <p>En la imagen puede observarse el ruteo de  una señal de audio en una aplicación, lo que podríamos escribir con javascript de la siguiente manera:</p> 
+         
+        <div class="highlight">
+               <pre class="prettyprint"><code class="language-js">   
+        var misNodos ={};
+        //Ruteo
+        fuentedeAudio.connect(misNodos.volumen);
+        misNodos.volumen.connect(misNodos.compresor);
+        misNodos.compresor.connect(misNodos.analizador);
+        misNodos.analizador.connect(misNodos.procesador);
+        misNodos.procesador.connect(contextoDeAudio.destination);
+        </code></pre></div>
+ <p> Una vez hemos establecido nuestra cadena de audio podemos cambiarla dinámicamente e implementar aplicaciones interactivas que cambien la cadena de audio. Solemos utilizar la llamada <code>nodo.disconnect(salida)</code>      
+        
+        
+      </div><!--/span-->         
+      
+          </div><!--/row-->
+        </div><!--/span-->
+
+        <div class="col-xs-6 col-sm-3 sidebar-offcanvas affix" id="sidebar" role="navigation" >
+          <div class="list-group">
+            
+            <a href="#" class="list-group-item active">Comenzando</a>
+            <a href="elbuffer.html" class="list-group-item">El Buffer</a>
+            <a href="oscilador.html" class="list-group-item">Oscilador</a>
+            <a href="espectro.html" class="list-group-item ">Espectro</a>
+            <a href="paneado.html" class="list-group-item">Paneado</a>
+            <a href="filtros.html" class="list-group-item">Filtros</a>
+            <a href="compresor.html" class="list-group-item">Compresor</a>
+          </div>
+        </div><!--/span-->
+      </div><!--/row-->
+
+      <hr>
+
+      <footer>
+        <p>&copy; Luis Javier Gil 2013 |&nbsp; <a href="https://github.com/lontafara/El-audio-en-la-web" ><img src="imagenes/GitHub.png"/></a> </p>
+      </footer>
+
+    </div><!--/.container-->
+<script>
+
+function comprobar(){
+	 var contextClass = (window.AudioContext || 
+    window.webkitAudioContext || 
+    window.mozAudioContext ||
+    window.oAudioContext || 
+    window.msAudioContext);
+    if (contextClass) {
+       alert(' La Web Audio API está diponible!'); 
+
+    } else {
+        alert( 'La Web Audio API  no está diponible.'); 
+       }
+	
+	
+	}
+
+</script>
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+    <script src="bootstrap/js/bootstrap.min.js"></script>
+    <script src="bootstrap/js/offcanvas.js"></script>
+    <script src="bootstrap/js/affix.js"></script>
+    <script src="bootstrap/js/dropdown.js"></script>
+	<script>
+$(function(){
+       $('td').tooltip({container: 'body'});
+    });
+$(function(){
+	$('.dropdown-toggle').dropdown() });
+    </script>
+  </body>
+</html>

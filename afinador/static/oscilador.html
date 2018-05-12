@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Ejemplo de un oscilador con Javascript a partir de la Web Audio API. ">
+    <meta name="author" content="Luis Javier Gil Bobillo">
+        <link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon">
+<link rel="icon" href="images/favicon.ico" type="image/x-icon">
+	<link rel="apple-touch-icon" href="images/icono57.png">
+	<link rel="apple-touch-icon" sizes="72x72" href="images/icono72.png">
+	<link rel="apple-touch-icon" sizes="114x114" href="images/icono114.png">
+
+    <title>Estudio de la Web audio API. Oscilador</title>
+ <!-- Bootstrap core CSS -->
+    <link href="bootstrap/css/bootstrap.min.css" rel="stylesheet" type="text/css">
+	<link href="google-code-prettify/prettify.css" rel="stylesheet" type="text/css">
+
+    <!-- Custom styles for this template -->
+    <link href="bootstrap/css/offcanvas.css" rel="stylesheet" type="text/css">
+    <link rel="stylesheet" type="text/css" href="bootstrap/css/docs.css">
+	<link rel="stylesheet" type="text/css" href="bootstrap/css/pygments-manni.css">
+    <!-- Just for debugging purposes. Don't actually copy this line! -->
+    <!--[if lt IE 9]><script src="../../docs-assets/js/ie8-responsive-file-warning.js"></script><![endif]-->
+
+    <!-- HTML5 shim and Respond.js IE8 support of HTML5 elements and media queries -->
+    <!--[if lt IE 9]>
+      <script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+      <script src="https://oss.maxcdn.com/libs/respond.js/1.3.0/respond.min.js"></script>
+    <![endif]-->
+     <script type="text/javascript"  src="google-code-prettify/prettify.js"></script>
+   <style>
+ #provisional{ position:absolute;}
+  p {text-align:justify;}
+ </style>
+ <script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-28916569-4', 'estegrafico.com');
+  ga('send', 'pageview');
+
+</script>
+  </head>
+
+  <body onLoad="prettyPrint()">
+    <div class="navbar navbar-fixed-top navbar-inverse" role="navigation">
+      <div class="container">
+        <div class="navbar-header">
+          <button type="button" class="navbar-toggle" data-toggle="collapse" data-target=".navbar-collapse">
+            <span class="sr-only">Cambia la navegación</span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="navbar-brand" href="#">El audio en la web</a>
+        </div>
+        <div class="collapse navbar-collapse">
+          <ul class="nav navbar-nav">
+            <li><a href="index.html">Inicio</a></li>
+            <li><a href="#" class="dropdown-toggle" data-toggle="dropdown">Afinador experimental<b class="caret"></b></a><ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+             <li><a href="afinadorb.html">Afinador</a></li>
+            <li><a href="detector-de-armonicos.html">Detección armónica</a></li></ul></li>
+            <li class="active"><a href="comenzando.html">Ejemplos</a></li>
+          </ul>
+        </div><!-- /.nav-collapse -->
+      </div><!-- /.container -->
+    </div><!-- /.navbar -->
+
+    <div class="container">
+    <div class="header">
+        <h3 class="text-muted">Oscilador simple</h3>
+      </div>
+
+      <div class="row row-offcanvas row-offcanvas-right">
+
+        <div class="col-xs-12 col-sm-9">
+          <p class="pull-right visible-xs">
+            <button type="button" class="btn btn-primary btn-xs" data-toggle="offcanvas">Cambiar navegación</button>
+          </p>
+          <div class="jumbotron">
+            <div id="marco"><div id="provisional"><h1>Pulsa el botón reproducir</h1></div><canvas id="canvas"></canvas></div>
+          </div>
+          <div class="row">
+            <div class="col-4 col-sm-4 col-lg-4">
+              <h4>Descripción</h4>
+             <p> Con este nodo podremos generar una fuente de audio con una forma de onda periódica. También nos permitirá generar tonos  de frecuencia arbitraria.</p>
+<p>Los osciladores son un elementos básicos en la síntesis de audio. Nuestro nodo oscilador, comenzará a emitir cuando le apliquemos el método <code>start()</code>, y contaremos con varios atributos para variar la forma de onda y la frecuencia, e incluso un detune para  hacer un ajuste fino de frecuencia.</p>
+</div><!--/span-->
+              
+              
+              <div class="col-4 col-sm-4 col-lg-4">
+               <div class="bs-callout bs-callout-info" >
+              <h4>Nodo Oscilador</h4>
+                <ul class="list-unstyled">      
+             		<li><p><strong>Frecuencia:</strong></li>
+            		<li> <input id="freq" onchange="potenciometro(this)" type="range" min="60" max="8000" step="1" value="440" /> &nbsp;<span id="valorfreq">440</span> &nbsp;Hz</p></li>
+            		 <li><p><strong>Detune<sub>&nbsp;CENTS</sub>:</strong></li>
+            		<li> <input id="detune" onchange="potenciometro(this)" type="range" min="-100" max="100" step="5" value="0" /> &nbsp;<span id="valorfreq">440</span> &nbsp;CENTS</p></li>
+            		 <li><p><strong>Forma de onda:</strong></li>
+                     <li><select onchange="potenciometro(this)" id="tipoonda">
+                      <option value="sine">Senoidal</option>
+                      <option value="square">Cuadrado</option>
+                      <option value="triangle">Triangulo</option>
+                      <option value="sawtooth">Sierra</option>
+                        </select>
+                        </li>     
+                	          
+             
+            
+				</div>
+             </div><!--/span-->
+            
+            
+            <div class="col-4 col-sm-4 col-lg-4 bs-example">              
+                 <ul class="list-unstyled">   
+            		<li> <p><button id="osc" onclick="Boton(this)" type="button"  class="btn btn-info" value="Reproducir" />Reproducir <span  id="icono" class="glyphicon glyphicon-play"></span></button></p></li>
+
+                   <li><p><strong><span class="glyphicon glyphicon-volume-up"></span>&nbsp;Volumen:</strong></p>
+               	 <li><input id="volumen" onchange="potenciometro(this)" type="range" min="0" max="1" step="0.01" value="0.2" />&nbsp;x &nbsp;<span id="valorvol">0,02</span></p></li>
+                   <li>Amplitud de la  muestra:  &nbsp;<span id="maximo">0</span></li>
+                	<li>El valor de ganancia&nbsp; es:  &nbsp;<span id="dB">0</span> &nbsp;dB</li>
+                	<li>Al aplicar el factor de ganancia de 0.5 obtenemos -6dB</li>
+                	<li>20log<sub>10</sub>(0,5) =  &nbsp;<span id="dBs"></span> &nbsp;dB</li> 
+                   <li><p> <button class="btn btn-warning " data-toggle="modal" data-target="#myModal">Ver Código fuente</button></p></li>
+            </ul>
+             
+            </div><!--/span-->
+            
+           
+          </div><!--/row-->
+          
+      <div class="row">
+            <div class="col-12 col-sm-12 col-lg-12">    
+          <p>En este ejemplo, para visualizar la forma de onda, utilizamos el método <code>getByteTimeDomainData</code>, que copia los datos de la forma de onda al array que le pasemos. En este caso un array  del tamaño del buffer: 512 muestras, la mitad del tamaño de nuestra resolución de la FFT (1024). Cada muestra se almacena en un Byte (256 niveles). El piso es 128 = 0dB.</p>
+           <div class="highlight">
+               <pre class="prettyprint"><code class="language-js">
+    function playOsc() {
+    	// Los controles son variables de los nodos
+        var FREQUENCIA = document.querySelector('#freq').value;
+        var ESCALA = document.querySelector('#volumen').value
+		
+        // Creamos los nodos
+        misNodos.osc = contextoDeAudio.createOscillator();
+        misNodos.osc.frequency.value = FREQUENCIA;
+        misNodos.ganancia = contextoDeAudio.createGain();
+        misNodos.ganancia.gain.value = ESCALA;
+        
+        //Los datos del nodo analizador nos sirven para dibujar en pantalla
+        misNodos.analizador= contextoDeAudio.createAnalyser();
+        misNodos.analizador.fftSize = 1024;
+		
+        //conectar
+        misNodos.osc.connect(misNodos.ganancia);
+        misNodos.ganancia.connect(misNodos.analizador);
+        misNodos.analizador.connect(contextoDeAudio.destination);
+		
+        // comenzar ya.
+        misNodos.osc.start(0);
+	    requestAnimationFrame(visualizar.bind(this));
+	    }
+            </code></pre>
+           </div>   
+   
+ <p>  Con las variables <code>FRECUENCIA</code> y <code>ESCALA</code> ajustamos el valor de los potenciómetros o controles. A continuación creamos los nodos con sus parámetros básicos y los conectamos entre sí. De la fuente, que en este caso viene definida por nuestro nodo oscilador <code> misNodos.osc = contextoDeAudio.createOscillator()</code> al destino <code>contextoDeAudio.destination</code>. El nodo oscilador genera formas de onda periodicas. y cuenta con  algunos atributos, como la frecuencia <code>frequency</code> o el <code>detune</code>, ajuste fino de frecuencia en partes porcentuales.</p>
+
+<p>El nodo analizador es el encargado de muestrear la señal en el dominio del tiempo y proveernos un array de 1024 muestras para graficarlo mediante la declaración:</p>
+<div class="highlight">
+<pre class="prettyprint"><code class="language-js">
+var muestras = new Uint8Array(misNodos.analizador.frequencyBinCount);
+misNodos.analizador.getByteTimeDomainData(muestras);
+</code></pre></div>
+<p>A continuación se utiliza la API <code>requestAnimationFrame</code> para visualizar la señal y hacer algunos cálculos, como el nivel de dB de referencia de la señal. Pulsa el botón <span class="label label-warning">explorar código</span> para ver con detalle el proceso de visualización.</p>
+   
+   </div>
+   <!-- Button trigger modal -->
+
+<!-- Modal -->
+<div class="modal fade" id="myModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">&times;</button>
+        <h4 class="modal-title" id="myModalLabel">Oscilador</h4>
+      </div>
+      <div class="modal-body">
+        <div class="highlight">
+               <pre class="prettyprint"><code class="language-js">
+///+*********************************************
+//  OSCILADOR
+//***********************************************
+//Declaración de variables globales
+var miFuente, misNodos = {},
+    espectro, max = 0,
+    imprimedBL, imprimedBR;
+var suena = false;
+var contextoDeAudio = new(window.AudioContext || window.webkitAudioContext)();
+
+
+// Función para sincronizar el botón play/pause   
+function Boton(button) {
+        if (!suena) {
+            playOsc();
+            //Con Jquery cambiamos el interior de la etiqueta button con id="osc"
+            $('#osc').html('Pausar&nbsp;');
+            //$(this).value = "Parar Sonido";
+            var parrafo = document.getElementById("provisional");
+            parrafo.parentNode.removeChild(parrafo);
+            suena = true;
+        } else {
+            misNodos.osc.stop(0);
+            $('#osc').html('Reproducir&nbsp;');
+            pulsaElBotonReproducir();
+            suena = false;
+        }
+    }
+    //Función de ruteo y reproducción del oscilador. cada vez que pulsamos play, 
+    //estamos creando una ruta de audio en el contexto y reproduciendo el oscilador
+
+function playOsc() {
+        //Ajustamos los valores de frecuencia y escala en los controles de pantalla
+        var FREQUENCIA = document.querySelector('#freq').value;
+        var ESCALA = document.querySelector('#volumen').value
+            //Creamos los nodos de audio
+        misNodos.osc = contextoDeAudio.createOscillator();
+        misNodos.osc.frequency.value = FREQUENCIA;
+        misNodos.ganancia = contextoDeAudio.createGain();
+        misNodos.ganancia.gain.value = ESCALA;
+        misNodos.analizador = contextoDeAudio.createAnalyser();
+        misNodos.analizador.fftSize = 1024;
+        //conectamos los nodos
+        misNodos.osc.connect(misNodos.ganancia);
+        misNodos.ganancia.connect(misNodos.analizador);
+        misNodos.analizador.connect(contextoDeAudio.destination);
+        // comenzar ya.
+        misNodos.osc.start(0);
+        //espectro = setInterval(dibujaEspectro, 20); //Podríamos invocar la función dibujarEspectro cada 20 ms
+        // Lo óptimo es utilizar requestAnimationFrame
+        requestAnimationFrame(visualizar.bind(this));
+        //Borrar texto
+
+    }
+    //Esta función dibuja en pantalla la forma de onda
+visualizar = function () {
+    //Ajustes del canvas
+    var canvas = document.querySelector('#canvas');
+    var ctd = canvas.getContext('2d');
+    var ancho = document.getElementById('marco').offsetWidth - 80;
+    canvas.width = ancho;
+    canvas.height = 256;
+    var muestras = new Uint8Array(misNodos.analizador.frequencyBinCount);
+    misNodos.analizador.getByteTimeDomainData(muestras);
+    //console.log(
+    //muestras.length
+    //)
+    //Dibujamos la forma de onda, incluso podríamos calcular su máximo:
+    var max = 0;
+    for (var i = 0; i < muestras.length; i++) {
+        max = muestras[i] > max ? muestras[i] : max;
+    }
+    //console.log(
+    //"maximo:  "+max )
+    max = max - 128
+    for (var i = 0; i < muestras.length; i++) {
+        var valor = muestras[i];
+        var porcentaje = valor / 256;
+        var alto = canvas.height * porcentaje;
+        var offset = canvas.height - alto;
+        var trazo = canvas.width / muestras.length;
+        ctd.fillStyle = "#fff";
+        ctd.font = "14px Helvetica";
+        ctd.fillRect(i * trazo, offset, 1, 1);
+        ctd.moveTo(0, 128);
+        ctd.lineTo(ancho, 128);
+        ctd.stroke();
+        ctd.fillText('0', 5, 128)
+            //dibujamaximo(ctd,max);
+            //El cálculo del máximo valor nos sirve para determinar el pico de dB
+        document.querySelector('#maximo').innerHTML = max;
+        dB = 20 * Math.log(Math.max((max / 127), Math.pow(10, -42 / 20))) / Math.LN10;
+        document.querySelector('#dB').innerHTML = dB;
+        dBs = 20 * Math.log(0.5) / Math.LN10;
+        document.querySelector('#dBs').innerHTML = dBs;
+    }
+    requestAnimationFrame(visualizar.bind(this));
+};
+
+function dibujamaximo(c, m) {
+        c.beginPath();
+        c.moveTo(0, 128 + m);
+        c.lineTo(20, 128 + m);
+        var a = 128 + m;
+        c.fillStyle = "rgb(25,255,0)";
+        c.fillText(m, 5, a);
+        c.stroke();
+    }
+    //Función que filtra los cambios en los controles
+
+function potenciometro(slider) {
+        if (contextoDeAudio.activeSourceCount > 0) {
+            if (slider.id == 'freq') {
+                var FREQ = slider.value;
+                misNodos.osc.frequency.value = FREQ;
+                document.querySelector('#valorfreq').innerHTML = FREQ;
+            } else if (slider.id == 'detune') {
+                var detune = slider.value;
+                misNodos.osc.detune.value = detune;
+                document.querySelector('#valordetune').innerHTML = detune;
+            } else if (slider.id == 'tipoonda') {
+                //Seleccionamos entre los tipos de forma de onda del oscilador.
+                misNodos.osc.type = slider.value;
+
+            } else if (slider.id == 'volumen') {
+                var volumen = slider.value;
+                misNodos.ganancia.gain.value = volumen;
+                document.querySelector('#valorvol').innerHTML = volumen;
+            }
+        }
+    }
+    //Función javascript para mostrar el texto, con Jquery escribiríamos menos :)
+
+function pulsaElBotonReproducir() {
+    var provisional = document.createElement('div');
+    provisional.setAttribute('id', 'provisional');
+    var parrafo = document.createElement("h1");
+    var contenido = document.createTextNode("Pulsa el botón reproducir");
+    provisional.appendChild(parrafo);
+    parrafo.appendChild(contenido);
+    var espectro = document.getElementById('marco');
+    var papa = espectro.parentNode;
+    papa.insertBefore(provisional, espectro);
+    document.querySelector('#provisional').appendChild(parrafo);
+}          
+               
+               </code></pre></div>
+      </div>
+      <div class="modal-footer">
+            <a  class="label label-info"target="_blank" href="comunes.js"><span class="glyphicon glyphicon-share-alt"></span>&nbsp; Ver Script de fucniones comunes</a>
+
+        <button type="button" class="btn btn-default" data-dismiss="modal">Cerrar</button>
+        
+      </div>
+    </div><!-- /.modal-content -->
+  </div><!-- /.modal-dialog -->
+</div><!-- /.modal -->
+   
+   </div><!-- Segunda fila-->       
+          
+        </div><!--/span-->
+
+        <div class="col-xs-6 col-sm-3 sidebar-offcanvas affix" id="sidebar" role="navigation">
+          <div class="list-group">
+            
+            <a href="comenzando.html" class="list-group-item">Comenzando</a>
+            <a href="elbuffer.html" class="list-group-item">El Buffer</a>
+            <a href="#" class="list-group-item active">Oscilador</a>
+            <a href="espectro.html" class="list-group-item ">Espectro</a>
+            <a href="paneado.html" class="list-group-item">Paneado</a>
+            <a href="filtros.html" class="list-group-item">Filtros</a>
+            <a href="compresor.html" class="list-group-item">Compresor</a>
+          </div>
+        </div><!--/span-->
+      </div><!--/row-->
+
+      <hr>
+
+      <footer>
+       <p>&copy; Luis Javier Gil 2013 |&nbsp; <a href="https://github.com/lontafara/El-audio-en-la-web" ><img src="imagenes/GitHub.png" alt="Lontafara on git"/></a> </p>
+      </footer>
+
+    </div><!--/.container-->
+
+<script type="text/javascript">
+///+*********************************************
+//  OSCILADOR
+//***********************************************
+//Declaración de variables globales
+var miFuente, misNodos = {},
+    espectro, max = 0,
+    imprimedBL, imprimedBR;
+var suena = false;
+var contextoDeAudio = new(window.AudioContext || window.webkitAudioContext)();
+
+
+ // Función para sincronizar el botón play/pause   
+function Boton(button) {
+    if (!suena) {
+        playOsc();
+        //Con Jquery cambiamos el interior de la etiqueta button con id="osc"
+        $('#osc').html('Pausar&nbsp;');
+        //$(this).value = "Parar Sonido";
+        var parrafo = document.getElementById("provisional");
+       parrafo.parentNode.removeChild(parrafo);
+        suena = true;
+    } else {
+        misNodos.osc.stop(0);
+        $('#osc').html('Reproducir&nbsp;');
+        pulsaElBotonReproducir();
+        suena = false;
+    }
+}
+//Función de ruteo y reproducción del oscilador. cada vez que pulsamos play, 
+//estamos creando una ruta de audio en el contexto y reproduciendo el oscilador
+function playOsc() {
+    //Ajustamos los valores de frecuencia y escala en los controles de pantalla
+    var FREQUENCIA = document.querySelector('#freq').value;
+    var ESCALA = document.querySelector('#volumen').value
+    //Creamos los nodos de audio
+    misNodos.osc = contextoDeAudio.createOscillator();
+    misNodos.osc.frequency.value = FREQUENCIA;
+    misNodos.ganancia = contextoDeAudio.createGain();
+    misNodos.ganancia.gain.value = ESCALA;
+    misNodos.analizador = contextoDeAudio.createAnalyser();
+    misNodos.analizador.fftSize = 1024;
+    //conectamos los nodos
+    misNodos.osc.connect(misNodos.ganancia);
+    misNodos.ganancia.connect(misNodos.analizador);
+    misNodos.analizador.connect(contextoDeAudio.destination);
+    // comenzar ya.
+    misNodos.osc.start(0);
+    //espectro = setInterval(dibujaEspectro, 20); //Podríamos invocar la función dibujarEspectro cada 20 ms
+    // Lo óptimo es utilizar requestAnimationFrame
+    requestAnimationFrame(visualizar.bind(this));
+    //Borrar texto
+    
+}
+//Esta función dibuja en pantalla la forma de onda
+visualizar = function() {
+    //Ajustes del canvas
+    var canvas = document.querySelector('#canvas');
+    var ctd = canvas.getContext('2d');
+    var ancho = document.getElementById('marco').offsetWidth - 80;
+    canvas.width = ancho;
+    canvas.height = 256;
+    var muestras = new Uint8Array(misNodos.analizador.frequencyBinCount);
+    misNodos.analizador.getByteTimeDomainData(muestras);
+    //console.log(
+    //muestras.length
+    //)
+    //Dibujamos la forma de onda, incluso podríamos calcular su máximo:
+    var max = 0;
+    for (var i = 0; i < muestras.length; i++) {
+        max = muestras[i] > max ? muestras[i] : max;
+    }
+    //console.log(
+    //"maximo:  "+max )
+    max = max - 128
+    for (var i = 0; i < muestras.length; i++) {
+        var valor = muestras[i];
+        var porcentaje = valor / 256;
+        var alto = canvas.height * porcentaje;
+        var offset = canvas.height - alto;
+        var trazo = canvas.width / muestras.length;
+        ctd.fillStyle = "#fff";
+        ctd.font = "14px Helvetica";
+        ctd.fillRect(i * trazo, offset, 1, 1);
+        ctd.moveTo(0, 128);
+        ctd.lineTo(ancho, 128);
+        ctd.stroke();
+        ctd.fillText('0', 5, 128)
+        //dibujamaximo(ctd,max);
+        //El cálculo del máximo valor nos sirve para determinar el pico de dB
+        document.querySelector('#maximo').innerHTML = max;
+        dB = 20 * Math.log(Math.max((max / 127), Math.pow(10, -42 / 20))) / Math.LN10;
+        document.querySelector('#dB').innerHTML = dB;
+        dBs = 20 * Math.log(0.5) / Math.LN10;
+        document.querySelector('#dBs').innerHTML = dBs;
+    }
+    requestAnimationFrame(visualizar.bind(this));
+};
+
+function dibujamaximo(c, m) {
+    c.beginPath();
+    c.moveTo(0, 128 + m);
+    c.lineTo(20, 128 + m);
+    var a = 128 + m;
+    c.fillStyle = "rgb(25,255,0)";
+    c.fillText(m, 5, a);
+    c.stroke();
+}
+//Función que filtra los cambios en los controles
+function potenciometro(slider) {
+    if (contextoDeAudio.activeSourceCount > 0) {
+        if (slider.id == 'freq') {
+            var FREQ = slider.value;
+            misNodos.osc.frequency.value = FREQ;
+            document.querySelector('#valorfreq').innerHTML = FREQ;
+         }else if (slider.id == 'detune') {
+            var detune = slider.value;
+            misNodos.osc.detune.value = detune;
+            document.querySelector('#valordetune').innerHTML = detune;  
+         }else if (slider.id == 'tipoonda') {
+            //Seleccionamos entre los tipos de forma de onda del oscilador.
+            misNodos.osc.type=slider.value;
+            
+        } else if (slider.id == 'volumen') {
+            var volumen = slider.value;
+            misNodos.ganancia.gain.value = volumen;
+            document.querySelector('#valorvol').innerHTML = volumen;
+        }
+    }
+}
+//Función javascript para mostrar el texto, con Jquery escribiríamos menos :)
+function pulsaElBotonReproducir() {
+    var provisional = document.createElement('div');
+    provisional.setAttribute('id', 'provisional');
+    var parrafo = document.createElement("h1");
+    var contenido = document.createTextNode("Pulsa el botón reproducir");
+    provisional.appendChild(parrafo);
+    parrafo.appendChild(contenido);
+    var espectro = document.getElementById('marco');
+    var papa = espectro.parentNode;
+    papa.insertBefore(provisional, espectro);
+    document.querySelector('#provisional').appendChild(parrafo);
+} 
+</script>
+    <!-- Bootstrap core JavaScript
+    ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+    <script src="bootstrap/js/bootstrap.min.js"></script>
+    <script src="bootstrap/js/offcanvas.js"></script>
+    <script src="bootstrap/js/dropdown.js"></script>
+	<script>
+$(function(){
+       $('td').tooltip({container: 'body'});
+    });
+$(function(){
+	$('.dropdown-toggle').dropdown() });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,771 @@
+<html lang="es"><head>
+    <!-- Meta, title, CSS, favicons, etc. -->
+    <meta charset="utf-8">
+<meta http-equiv="X-UA-Compatible" content="IE=edge">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="">
+<meta name="author" content="">
+
+<title>
+  
+Estudio sobre la web audio API
+  
+</title>
+
+<!-- ESTILOS -->
+<link href="bootstrap/css/bootstrap.min.css" rel="stylesheet">
+<link href="bootstrap/css/docs.css" rel="stylesheet">
+
+<style>
+.warning1{
+    background-color:#fffdf1;
+
+    }
+    .dangera{
+    background-color: #FFCC99;
+    }   
+    /* Ejemplos*/
+    .ejwarning1{
+    background-color:#fffdf1;
+
+    }
+    .ejdangera{
+    background-color: #FFCC99;
+    }   
+    .ejdanger{
+    background-color: #f2dede;}
+    .ejwarning{
+    background-color:#fcf8e3;}
+    .ejsuccess{
+    background-color:#d0e9c6;}  
+    
+    .nota_baja{ background-color: #E43C3F;color:#ccc;}
+    .nota_aprox{ background-color: #EA191C; color:#FFFFFF;}
+    .nota_alta{ background-color: #8F3133;color:#ccc;}
+	.nota_baja_ley{ background-color: #E43C3F;color:#ccc;}
+    .nota_aprox_ley{ background-color: #EA191C; color:#FFFFFF;}
+    .nota_alta_ley{ background-color: #8F3133;color:#ccc;}
+    </style>
+
+<!-- Favicons -->
+<link rel="apple-touch-icon-precomposed" sizes="144x144" href="docs-assets/ico/apple-touch-icon-144-precomposed.png">
+<link rel="shortcut icon" href="docs-assets/ico/favicon.png">
+
+<!--JAVASCRIPT AFINADOR -->
+<script type="text/javascript"  src="notas.js"></script>
+ <script type="text/javascript">
+    
+        var contextoDeAudio, analizador, mibuffer, procesado,
+            miFuente,
+            misNodos = {},espectro,
+            suena = false;
+
+        function init() {
+            if('webkitAudioContext' in window) {
+               contextoDeAudio = new AudioContext();
+            }
+        }
+
+     
+    //------USAMOS  MICrófono
+    function sonidoDirecto() {
+        
+        tomarEntradaMic({audio:true}, reproducirMic);
+    }
+    function error() {
+        alert('Ha fallado la captura de audio...');
+    }
+   function tomarEntradaMic(medio, llamada) {
+    try {
+        navigator.getUserMedia =
+            navigator.getUserMedia ||
+            navigator.webkitGetUserMedia ||
+            navigator.mozGetUserMedia;
+        navigator.getUserMedia(medio, llamada, error);
+    } catch (e) {
+        alert('Nos aprarece algún error en la toma de entrada de micrófono... :' + e);
+    }
+}
+
+    //play desde micro
+    function reproducirMic(stream) {
+       
+           var source = contextoDeAudio.createMediaStreamSource(stream);
+            // crea analizador
+            analizador = contextoDeAudio.createAnalyser();
+            analizador.fftSize = 2048;            
+            cadenaDeAudio(source);
+            requestAnimationFrame(calculo.bind(this));
+            miFuente = source;
+        }  
+      //establecemos la cadena de audio 
+        function cadenaDeAudio(source) {
+
+            source.connect(analizador);
+
+            return source;
+        }
+        
+
+        function calculo() {
+                
+            //-----Byte de enteros, array de 256 valores de amplitud
+            var ByteDatosFrec = new Uint8Array(analizador.frequencyBinCount);
+            analizador.getByteFrequencyData(ByteDatosFrec);
+            
+          
+
+            //--------------
+            
+            var maximo = ByteDatosFrec[0];
+            var pico = ByteDatosFrec[0];
+            var valores = new Array();
+            var posiciones = new Array();
+            var valorespico = new Array();
+            var posicionespico = new Array();
+         
+                //Comparo valores mayores que el umbral
+                
+                for (var m = 0; m <= (ByteDatosFrec.length); m++) {
+                              var magnitud = ByteDatosFrec[m];
+                              var siguiente = ByteDatosFrec[m+1];
+                              var anterior = ByteDatosFrec[m-1];
+                                                               
+                                var porcentaje = magnitud / 256;
+                               if ((magnitud > maximo) && (magnitud > siguiente) && (magnitud > anterior) && (magnitud > 128)){
+                                     
+                                 pico = magnitud;
+                                 valores.push(pico);
+                                 posiciones.push(m);
+                                                                  
+                                 var pos = m;
+                                 //var frecuencia = ((pos*contextoDeAudio.sampleRate)/analizador.fftSize);
+                    
+                                
+                                 }
+     
+        
+        ///CORRESPONDENCIA DE NOTAS     
+       
+	   	 if (contextoDeAudio.sampleRate=='48000' && sw==0 ){
+			alert('La frecuencia de muestreo de su dispositivo de salida es de 48.000Hz. La aplicación funciona con el estandar de 44100Hz. Si tu S.O. es Mac, puedes cambiarla fácilmente en Utilidades-> Configuración de Audio y MIDI')
+			sw=1;
+			}     
+                //Compruebo cuando he completado un ciclo de muestras 
+                    if(m == ByteDatosFrec.length){
+                        
+                       
+                        if(posiciones.length == 0){borra();}
+                        
+                    //console.log('posiciones: '+posiciones)
+                    //console.log('valores: '+valores)
+                    (document.querySelector(".nota")).innerHTML = '--';
+                        if (posiciones){
+                            (document.querySelector(".nota")).innerHTML = '?';
+                             marca(posiciones);
+                            //borra();
+                            //comprobar todas las notas
+                            //Notas--------
+                            comprobaciones(posiciones); 
+							           
+                            
+                        }
+                    
+                    }
+                                
+
+                }
+				requestAnimationFrame(calculo.bind(this));
+            }
+        
+    //Check notas/porciones de fecuencia
+    function comprobar(intervalosNota, posiciones){ 
+     
+      for (var i = 0; i < (intervalosNota.length); i++){
+          var a = posiciones.indexOf(intervalosNota[i]);
+         if( a == -1) 
+         {return false;}
+      }
+      //alert('esta');
+      //marca(intervalosNota, posiciones);
+      return true;
+      }
+
+    function marca(posiciones){
+
+     for (var i = 0; i < (posiciones.length); i++){
+    //$("#" + intervalosNota[i]).html(intervalosNota[i]) ;
+    //console.log(intervalosNota[i]);
+     if($("#" + posiciones[i]) || $("."+posiciones[i])){
+        if($("#" + posiciones[i]).hasClass('aprox')){
+            $("#" + posiciones[i]).addClass('warning')
+            }
+        if($("." + posiciones[i]).hasClass('aprox1'))
+            {
+            $("." + posiciones[i]).addClass('warning1')
+        }else{
+        $("#" + posiciones[i]).addClass('success');
+            }
+     
+     
+     }
+
+     }
+
+
+    }
+
+
+
+    function borra(){
+        $("*").removeClass('success');
+        $("*").removeClass('nota_aprox');
+        $("*").removeClass('warning');
+        $("*").removeClass('warning1');
+        $("*").removeClass('nota_alta');
+        $("*").removeClass('nota_baja');
+    }
+</script>
+
+
+
+</head>
+  <body class="bs-docs-home"  onLoad="init();">
+    <a class="sr-only" href="#content">Ir al contenido</a>
+
+    <!-- Docs master nav -->
+    <header class="navbar navbar-inverse navbar-fixed-top bs-docs-nav" >
+  <div class="container">
+    <div class="navbar-header">
+      <button class="navbar-toggle" type="button" data-toggle="collapse" data-target=".bs-navbar-collapse">
+        <span class="sr-only">Despliega el menú</span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+      <a href="" class="navbar-brand">El audio en la web</a>
+    </div>
+    <nav class="collapse navbar-collapse bs-navbar-collapse" role="navigation">
+      <ul class="nav navbar-nav">
+        <li ><a href="index.html">Inicio</a></li>
+            <li class="active"><a href="#" class="dropdown-toggle" data-toggle="dropdown">Afinador experimental<b class="caret"></b></a><ul class="dropdown-menu" role="menu" aria-labelledby="dLabel">
+            <li><a href="detector-de-armonicos.html">Detección armónica</a></li></ul>
+            <li><a href="comenzando.html">Ejemplos</a></li>
+      </ul></li>
+      <ul class="nav navbar-nav navbar-right">
+        <li>
+          <a href="#">Sobre mí</a>
+        </li>
+      </ul>
+    </nav>
+  </div>
+</header>
+
+    <main class="bs-docs-masthead" >
+  <div class="container">
+  		<p class="lead"> Afinador de guitarra experimental basado en la detección armónica. Construido con Javascript a partir de la Web Audio API.
+   		<p class="lead">
+   			<button class="btn btn-outline-inverse btn-lg" onclick="sonidoDirecto()">Usar sonido de microfono</button>
+   		</p>
+   	<p><sub>Nota:</sub></p>
+   		<h1><span class="nota">--</span></h1>
+       
+    
+  </div>
+</main>
+<div class="bs-docs-featurette">
+
+<h2 class="bs-docs-featurette-title">Tabla de correspondencia armónica</h2>
+<p> La nota se muestra a partir de coincidencias en la línea armónica.<a href="detector-de-armonicos.html"> Pulsa aquí</a> para examinar con detalle el proceso de detección</p><p>&nbsp; </p>
+<div class=" container bs-docs-container">
+                <table class="table table-bordered table-condensed valores">
+                    <thead>
+                        <tr>
+                            <th colspan="13" style="text-align:center">
+                            Correspondencia de frecuencias</th>
+                        </tr>
+
+                        <tr>
+                            <th>&nbsp;</th>
+
+                            <th id="C">C</th>
+
+                            <th id="Cs">C#</th>
+
+                            <th id="D">D</th>
+
+                            <th id="Eb">Eb</th>
+
+                            <th id="E">E</th>
+
+                            <th id="F">F</th>
+
+                            <th id="Fs">F#</th>
+
+                            <th id="G">G</th>
+
+                            <th id="Gs">G#</th>
+
+                            <th id="A">A</th>
+
+                            <th id="Bb">Bb</th>
+
+                            <th id="B">B</th>
+                        </tr>
+                    </thead>
+
+                    <tbody>
+                        <tr>
+                            <td style="font-weight: bold">2</td>
+
+                            <td data-placement="top" data-toggle="tooltip" id=
+                            "3" title="± 1Hz. Posición de la muestra = 3">
+                            65.41</td>
+
+                            <td>69.30</td>
+
+                            <td>73.42</td>
+
+                            <td>77.78</td>
+
+                            <td>82.41</td>
+
+                            <td data-placement="top" data-toggle="tooltip" id=
+                            "4" title="± 1Hz Posición de la muestra = 4. 86Hz">
+                            87.31</td>
+
+                            <td>92.50</td>
+
+                            <td>98.00</td>
+
+                            <td>103.8</td>
+
+                            <td class="aprox" data-placement="left"
+                            data-toggle="tooltip" id="5" title=
+                            "± 5Hz. Posición de la muestra = 5. 107Hz">
+                            110.0</td>
+
+                            <td>116.5</td>
+
+                            <td>123.5</td>
+                        </tr>
+
+                        <tr>
+                            <td style="font-weight: bold">3</td>
+
+                            <td data-placement="top" data-toggle="tooltip" id=
+                            "6" title=
+                            "± 1Hz Posición de la muestra = 6. 129Hz">
+                            130.8</td>
+
+                            <td>138.6</td>
+
+                            <td>146.8</td>
+
+                            <td class="aprox" data-placement="top" data-toggle=
+                            "tooltip" id="7" title=
+                            "± 5Hz Posición de la muestra = 7. 150Hz">
+                            155.6</td>
+
+                            <td>164.8</td>
+
+                            <td class="aprox" data-placement="top" data-toggle=
+                            "tooltip" id="8" title=
+                            "± 5Hz Posición de la muestra = 8. 172Hz">
+                            174.6</td>
+
+                            <td>185.0</td>
+
+                            <td>196.0</td>
+
+                            <td class="aprox1" data-placement="top"
+                            data-toggle="tooltip" id="10" title=
+                            "± 10Hz Posición de la muestra = 10. 215Hz">
+                            207.7</td>
+
+                            <td>220.0</td>
+
+                            <td class="aprox" data-placement="left"
+                            data-toggle="tooltip" id="11" title=
+                            "± 5Hz Posición de la muestra = 11. 236Hz">
+                            233.1</td>
+
+                            <td class="aprox1" data-placement="left"
+                            data-toggle="tooltip" title=
+                            "± 10Hz Posición de la muestra = 11. 236Hz">
+                            246.9</td>
+                        </tr>
+
+                        <tr>
+                            <td style="font-weight: bold">4</td>
+
+                            <td class="aprox" data-placement="left"
+                            data-toggle="tooltip" id="12" title=
+                            "± 5Hz Posición de la muestra = 12. 258Hz">
+                            261.6</td>
+
+                            <td class="aprox" data-placement="left"
+                            data-toggle="tooltip" id="13" title=
+                            "± 5Hz Posición de la muestra = 13. 279Hz">
+                            277.2</td>
+
+                            <td class="aprox1" data-placement="left"
+                            data-toggle="tooltip" id="14" title=
+                            "± 10Hz Posición de la muestra = 14. 301Hz">
+                            293.7</td>
+
+                            <td class="aprox1" data-placement="left"
+                            data-toggle="tooltip" title=
+                            "± 10Hz Posición de la muestra = 14. 301Hz">
+                            311.1</td>
+
+                            <td class="aprox1" data-placement="left"
+                            data-toggle="tooltip" id="15" title=
+                            "± 10Hz Posición de la muestra = 15. 322Hz">
+                            329.6</td>
+
+                            <td class="aprox" data-placement="left"
+                            data-toggle="tooltip" id="16" title=
+                            "± 15Hz Posición de la muestra = 16. 344Hz">
+                            349.2</td>
+
+                            <td class="aprox" data-placement="left"
+                            data-toggle="tooltip" id="17" title=
+                            "± 5Hz Posición de la muestra = 17. 366Hz">
+                            370.0</td>
+
+                            <td class="aprox" data-placement="left"
+                            data-toggle="tooltip" id="18" title=
+                            "± 5Hz Posición de la muestra = 18. 687Hz">
+                            392.0</td>
+
+                            <td class="aprox1" data-placement="left"
+                            data-toggle="tooltip" id="19" title=
+                            "± 10Hz Posición de la muestra = 19. 409Hz">
+                            415.3</td>
+
+                            <td class="aprox1" data-placement="left"
+                            data-toggle="tooltip" id="20" title=
+                            "± 10Hz Posición de la muestra = 20. 430Hz">
+                            440.0</td>
+
+                            <td class="aprox1" data-placement="left"
+                            data-toggle="tooltip" id="22" title=
+                            "± 10Hz Posición de la muestra = 22. 473Hz">
+                            466.2</td>
+
+                            <td data-placement="left" data-toggle="tooltip" id=
+                            "23" title="± 1Hz Posición de la muestra = 23">
+                            493.9</td>
+                        </tr>
+
+                        <tr>
+                            <td style="font-weight: bold">5</td>
+
+                            <td class="aprox1" data-placement="left"
+                            data-toggle="tooltip" id="24" title=
+                            "± 10Hz Posición de la muestra = 24. 516Hz">
+                            523.3</td>
+
+                            <td class="aprox" data-placement="left"
+                            data-toggle="tooltip" id="26" title=
+                            "± 5Hz Posición de la muestra = 26. 559Hz">
+                            554.4</td>
+
+                            <td class="aprox1" data-placement="left"
+                            data-toggle="tooltip" id="27" title=
+                            "± 10Hz Posición de la muestra = 27. 581Hz">
+                            587.3</td>
+
+                            <td class="aprox" data-placement="left"
+                            data-toggle="tooltip" id="29" title=
+                            "± 5Hz Posición de la muestra = 29. 624Hz">
+                            622.3</td>
+
+                            <td class="aprox1" data-placement="left"
+                            data-toggle="tooltip" id="31" title=
+                            "± 10Hz Posición de la muestra = 31. 667Hz">
+                            659.3</td>
+
+                            <td class="aprox1" data-placement="left"
+                            data-toggle="tooltip" id="32" title=
+                            "± 10Hz Posición de la muestra = 32. 689Hz">
+                            698.5</td>
+
+                            <td class="aprox1" data-placement="left"
+                            data-toggle="tooltip" id="34" title=
+                            "± 10Hz Posición de la muestra = 34. 732Hz">
+                            740.0</td>
+
+                            <td>784.0</td>
+
+                            <td class="aprox1" data-placement="left"
+                            data-toggle="tooltip" id="39" title=
+                            "± 10Hz Posición de la muestra = 39. 839Hz">
+                            830.6</td>
+
+                            <td class="aprox" data-placement="left"
+                            data-toggle="tooltip" id="41" title=
+                            "± 5Hz Posición de la muestra = 41. 882Hz">
+                            880.0</td>
+
+                            <td class="aprox1" data-placement="left"
+                            data-toggle="tooltip" id="43" title=
+                            "± 10Hz Posición de la muestra = 43. 925Hz">
+                            932.3</td>
+
+                            <td class="aprox" data-placement="left"
+                            data-toggle="tooltip" id="46" title=
+                            "± 5Hz Posición de la muestra = 46. 990Hz">
+                            987.8</td>
+                        </tr>
+
+                        <tr>
+                            <td style="font-weight: bold">6</td>
+
+                            <td class="aprox1" data-placement="left"
+                            data-toggle="tooltip" id="49" title=
+                            "± 10Hz Posición de la muestra = 49. 1055Hz">
+                            1047</td>
+
+                            <td class="aprox1" data-placement="left"
+                            data-toggle="tooltip" id="52" title=
+                            "± 10Hz Posición de la muestra = 52. 1119Hz">
+                            1109</td>
+
+                            <td class="aprox1" data-placement="left"
+                            data-toggle="tooltip" id="55" title=
+                            "± 10Hz Posición de la muestra = 55. 1184Hz">
+                            1175</td>
+
+                            <td class="aprox" data-placement="left"
+                            data-toggle="tooltip" id="58" title=
+                            "± 5Hz Posición de la muestra = 58. 1248Hz">
+                            1245</td>
+
+                            <td class="aprox1" data-placement="left"
+                            data-toggle="tooltip" id="61" title=
+                            "± 10Hz Posición de la muestra = 61. 1313Hz">
+                            1319</td>
+
+                            <td class="aprox" data-placement="left"
+                            data-toggle="tooltip" id="65" title=
+                            "± 5Hz Posición de la muestra = 65. 1399Hz">
+                            1397</td>
+
+                            <td class="aprox" data-placement="left"
+                            data-toggle="tooltip" id="69" title=
+                            "± 5Hz Posición de la muestra = 69. 1485Hz">
+                            1480</td>
+
+                            <td class="aprox" data-placement="left"
+                            data-toggle="tooltip" id="73" title=
+                            "± 5Hz Posición de la muestra = 73. 1571Hz">
+                            1568</td>
+
+                            <td class="aprox" data-placement="left"
+                            data-toggle="tooltip" id="77" title=
+                            "± 5Hz Posición de la muestra = 77. 1658Hz">
+                            1661</td>
+
+                            <td class="aprox" data-placement="left"
+                            data-toggle="tooltip" id="82" title=
+                            "± 5Hz Posición de la muestra = 82. 1765Hz">
+                            1760</td>
+
+                            <td class="aprox1" data-placement="left"
+                            data-toggle="tooltip" id="87" title=
+                            "± 10Hz Posición de la muestra = 87. 1873Hz">
+                            1865</td>
+
+                            <td>1976</td>
+                        </tr>
+
+                        <tr>
+                            <td style="font-weight: bold">7</td>
+
+                            <td class="aprox" data-placement="left"
+                            data-toggle="tooltip" id="97" title=
+                            "± 5Hz Posición de la muestra = 97. 2088Hz">
+                            2093</td>
+
+                            <td data-placement="left" data-toggle="tooltip" id=
+                            "103" title=
+                            "± 1Hz Posición de la muestra = 103. 2217Hz">
+                            2217</td>
+
+                            <td class="aprox" data-placement="left"
+                            data-toggle="tooltip" id="109" title=
+                            "± 5Hz Posición de la muestra = 109. 2347Hz">
+                            2349</td>
+
+                            <td class="aprox1" data-placement="left"
+                            data-toggle="tooltip" id="116" title=
+                            "± 10Hz Posición de la muestra = 116. 2497Hz">
+                            2489</td>
+
+                            <td class="aprox1" data-placement="left"
+                            data-toggle="tooltip" id="122" title=
+                            "± 10Hz Posición de la muestra = 122. 2627Hz">
+                            2637</td>
+
+                            <td class="aprox" data-placement="left"
+                            data-toggle="tooltip" id="130" title=
+                            "± 5Hz Posición de la muestra = 130. 2799">
+                            2794</td>
+
+                            <td class="aprox1" data-placement="left"
+                            data-toggle="tooltip" id="137" title=
+                            "± 10Hz Posición de la muestra = 137. 2950Hz">
+                            2960</td>
+
+                            <td class="aprox1" data-placement="left"
+                            data-toggle="tooltip" id="146" title=
+                            "± 10Hz Posición de la muestra = 146. 3143Hz">
+                            3136</td>
+
+                            <td class="aprox1" data-placement="left"
+                            data-toggle="tooltip" id="154" title=
+                            "± 10Hz Posición de la muestra = 154. 3316Hz">
+                            3322</td>
+
+                            <td>3520</td>
+
+                            <td class="aprox" data-placement="left"
+                            data-toggle="tooltip" id="173" title=
+                            "± 5Hz Posición de la muestra = 173. 1725Hz">
+                            3729</td>
+
+                            <td>3951</td>
+                        </tr>
+
+                        <tr>
+                            <td style="font-weight: bold">8</td>
+
+                            <td class="aprox1" data-placement="left"
+                            data-toggle="tooltip" id="194" title=
+                            "± 10Hz Posición de la muestra = 194. 4177Hz">
+                            4186</td>
+
+                            <td data-placement="left" data-toggle="tooltip" id=
+                            "206" title=
+                            "± 1Hz Posición de la muestra = 206. 4435Hz">
+                            4435</td>
+
+                            <td class="aprox" data-placement="left"
+                            data-toggle="tooltip" id="218" title=
+                            "± 5Hz Posición de la muestra = 218. 4694Hz">
+                            4699</td>
+
+                            <td class="aprox" data-placement="left"
+                            data-toggle="tooltip" id="231" title=
+                            "± 5Hz Posición de la muestra = 231. 4974Hz">
+                            4978</td>
+
+                            <td data-placement="left" data-toggle="tooltip" id=
+                            "245" title=
+                            "± 1Hz Posición de la muestra = 245. 5275Hz">
+                            5274</td>
+
+                            <td class="aprox1" data-placement="left"
+                            data-toggle="tooltip" id="260" title=
+                            "± 10Hz Posición de la muestra = 260. 5598Hz">
+                            5588</td>
+
+                            <td data-placement="left" data-toggle="tooltip" id=
+                            "275" title=
+                            "± 1Hz Posición de la muestra = 275. 5921Hz">
+                            5920</td>
+
+                            <td class="aprox" data-placement="left"
+                            data-toggle="tooltip" id="291" title=
+                            "± 1Hz Posición de la muestra = 291. 6266Hz">
+                            6272</td>
+
+                            <td class="aprox1" data-placement="left"
+                            data-toggle="tooltip" id="309" title=
+                            "± 10Hz Posición de la muestra = 309. 6653Hz">
+                            6645</td>
+
+                            <td data-placement="left" data-toggle="tooltip" id=
+                            "327" title=
+                            "± 1Hz Posición de la muestra = 327. 7041Hz">
+                            7040</td>
+
+                            <td class="aprox1" data-placement="left"
+                            data-toggle="tooltip" id="346" title=
+                            "± 10Hz Posición de la muestra = 346. 7450Hz">
+                            7459</td>
+
+                            <td data-placement="left" data-toggle="tooltip" id=
+                            "367" title=
+                            "± 1Hz Posición de la muestra = 367. 7902Hz">
+                            7902</td>
+                        </tr>
+
+                        <tr>
+                            <td colspan="4">Código de colores:</td>
+
+                            <td class="nota_baja_ley">Nota-</td>
+
+                            <td class="nota_aprox_ley">Nota</td>
+
+                            <td class="nota_alta_ley">Nota+</td>
+
+                            <td class="ejsuccess" colspan="2">Armónico centrado
+                            en ±1Hz</td>
+
+                            <td class="ejwarning" colspan="2">Armónico centrado
+                            en ±5Hz</td>
+
+                            <td class="ejwarning1" colspan="2">Armónico
+                            centrado en ±10Hz</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+     
+    </div>
+</div>
+
+    <footer class="container" role="contentinfo">
+     
+
+      <p>&copy; Luis Javier Gil 2013 |&nbsp; <a href="https://github.com/lontafara/El-audio-en-la-web" ><img src="imagenes/GitHub.png"/></a> </p>
+
+
+     
+    </footer>
+
+<script>
+  (function(i,s,o,g,r,a,m){i['GoogleAnalyticsObject']=r;i[r]=i[r]||function(){
+  (i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),
+  m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)
+  })(window,document,'script','//www.google-analytics.com/analytics.js','ga');
+
+  ga('create', 'UA-28916569-4', 'estegrafico.com');
+  ga('send', 'pageview');
+
+</script>
+<!-- Placed at the end of the document so the pages load faster -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script src="bootstrap/js/bootstrap.js"></script>
+<script src="http://code.jquery.com/jquery-1.11.0.min.js"></script>
+	<script src="http://code.jquery.com/jquery-migrate-1.2.1.min.js"></script>
+	<script src="http://getbootstrap.com/dist/js/bootstrap.min.js"></script>
+	<script src="http://getbootstrap.com/assets/js/docs.min.js"></script>
+	<script src="bootstrap/js/dropdown.js"></script>
+	<script>
+$(function(){
+       $('td').tooltip({container: 'body'});
+    });
+$(function(){
+	$('.dropdown-toggle').dropdown() });
+    </script>
+
+
+
+  
+
+</body></html>

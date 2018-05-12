@@ -1,0 +1,43 @@
+{% load staticfiles %}
+
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+
+    <title>Afinador de Guitarra</title>
+
+    <meta name="viewport" content="width=device-width">
+
+    <link rel="stylesheet" href="{% static 'css/app.css' %}">
+    <link rel="stylesheet" href="{% static 'css/content.css' %}">
+    
+  </head>
+  <body>
+      <h1>Afinador Libre</h1>
+      <div id="content">
+		<span id="select">Seleccione una Cuerda:</span>
+	  <ul>
+	 <li id="corda1" class="cordas">1</li>
+	 <li id="corda2" class="cordas">2</li>
+	 <li id="corda3" class="cordas">3</li>
+	 <li id="corda4" class="cordas">4</li>
+	 <li id="corda5" class="cordas">5</li>
+	 <li id="corda6" class="cordas">6</li>
+	  </ul>
+       <button id="play">
+	  toque para reproducir
+       </button>
+	<div id="repeatdiv">
+	<button id="repeat">
+	  Repetir
+	</button>
+	</div>
+
+      </div>
+
+    <script type="text/javascript" src="{% static 'js/zepto.min.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/playsound.js' %}"></script>
+    <script type="text/javascript" src="{% static 'js/app.js' %}"></script>
+  </body>
+</html>
